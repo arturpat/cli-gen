@@ -66,7 +66,7 @@ def get_api_key() -> str:
 def main():
     openai.api_key = get_api_key()
     chat = ChatWithMemory(system_prompt=system_prompt, temperature=temperature)
-    prompt = ' '.join(sys.argv)
+    prompt = ' '.join(sys.argv[1:])
     try:
         command = chat.ask_gpt_code_snippet_only(prompt)
     except openai.error.AuthenticationError as e:
