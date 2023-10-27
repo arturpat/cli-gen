@@ -67,7 +67,11 @@ def main():
     openai.api_key = get_api_key()
     chat = ChatWithMemory(system_prompt=system_prompt, temperature=temperature)
     prompt = ' '.join(sys.argv)
-    command = chat.ask_gpt_code_snippet_only(prompt)
+    try:
+        command = chat.ask_gpt_code_snippet_only(prompt)
+    except openai.error.AuthenticationError as e:
+        print(f"Incorrect API key provided. Error from OpenAI: {e.error}")
+        quit(1)
     while True:
         choice = input("Execute? (Y)es/(R)etry/(N)ew prompt within the same conversation/(Q)uit ").lower()
         if choice in decisions["yes"]:
