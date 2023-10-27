@@ -1,5 +1,5 @@
 # cli-gen - your terminal wizzard
-Harness the power of GPT directly from your terminal. Just
+Harness the power of GPT directly from your bash/zsh/fish terminal. Just
 tell it what you would like to achieve.
 ![Demo](./cli-gen_demo.gif)
 
@@ -22,3 +22,7 @@ The script will guide you to set up your OpenAI api key
 - zsh
 - Bash
 - Fish
+
+## Known issues
+- Sometimes GPT will refuse to answer (`I don't know how to help with that.`). 
+You can select `(R)etry`, keep your fingers crossed and wait for another try.

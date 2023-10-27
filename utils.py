@@ -6,7 +6,9 @@ import re
 import subprocess
 from typing import List, Literal, Dict, Optional
 
+import colorama
 import openai
+from colorama import Fore
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 
@@ -49,6 +51,7 @@ class ChatWithMemory:
 
         self.generated_one_liners = []
         self.executed_one_liners = []
+        colorama.init(autoreset=True)
 
     def initial_call(self):
         """
@@ -144,11 +147,11 @@ class ChatWithMemory:
         resp = self.ask_gpt(query=query)
         try:
             extracted_code = extract_code_snipped(resp)
-            print(extracted_code)
+            print(Fore.GREEN + extracted_code)
             self.generated_one_liners.append(extracted_code)
             return extract_code_snipped(resp)
         except ValueError:
-            print("No code returned")
+            print(Fore.RED + "No code returned")
 
     def fresh_start(self):
         self.initial_call()
