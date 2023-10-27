@@ -82,7 +82,6 @@ def main():
             command = chat.ask_gpt_code_snippet_only(prompt)
             continue
         elif choice in decisions["retry"]:
-            # TODO update prompts
             command = chat.ask_gpt_code_snippet_only(prompt)
             continue
         elif choice in decisions["quit"]:
