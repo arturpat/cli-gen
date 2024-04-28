@@ -7,7 +7,9 @@ import subprocess
 from typing import List, Literal, Dict, Optional
 
 import colorama
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 from colorama import Fore
 from yaspin import yaspin
 from yaspin.spinners import Spinners
@@ -64,12 +66,9 @@ class ChatWithMemory:
         self.messages.append(ChatMessage("system", f"System info: {self.get_system_info()}").__dict__)
 
         with yaspin(Spinners.flip, text="Initiating GPT...") as sp:
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=self.messages,
-                temperature=self.temperature,
-                # functions=self.functions,  # to be enabled with functions
-            )
+            response = client.chat.completions.create(model=self.model,
+                                                      messages=self.messages,
+                                                      temperature=self.temperature)
             # todo check response
 
     def _handle_chat_completion_call(self, prompt, role: str = "user"):
@@ -77,12 +76,9 @@ class ChatWithMemory:
             os_name = platform.system() if platform.system() != "Darwin" else "Mac OS"
             prompt = f"Generate a terminal one-liner to {prompt} in {os_name}"
             self.messages.append(ChatMessage(role, prompt).__dict__)
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=self.messages,
-                temperature=self.temperature,
-                # functions=self.functions,  # to be enabled with functions
-            )
+            response = client.chat.completions.create(model=self.model,
+                                                      messages=self.messages,
+                                                      temperature=self.temperature)
         return response
 
     @staticmethod
@@ -108,12 +104,12 @@ class ChatWithMemory:
 
         # Ask the question
         response = self._handle_chat_completion_call(query)
-        response_message = response["choices"][0]["message"]
+        response_message = response.choices[0].message
 
         # Check if GPT wanted to call a function
-        if not response_message.get("function_call"):
-            self.messages.append(response["choices"][0]["message"])
-            return response["choices"][0]["message"]["content"]
+        if not response_message.function_call:
+            self.messages.append(response.choices[0].message)
+            return response.choices[0].message.content
         else:
             print("Calling a function...")
             # Step 3: call the function
@@ -135,13 +131,11 @@ class ChatWithMemory:
                     "content": function_response,
                 }
             )  # extend conversation with function response
-            second_response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=self.messages,
-                temperature=self.temperature
-            )  # get a new response from GPT where it can see the function response
-            self.messages.append(second_response["choices"][0]["message"])
-            return second_response["choices"][0]["message"]["content"]
+            second_response = client.chat.completions.create(model=self.model,
+                                                             messages=self.messages,
+                                                             temperature=self.temperature)  # get a new response from GPT where it can see the function response
+            self.messages.append(second_response.choices[0].message)
+            return second_response.choices[0].message.content
 
     def ask_gpt_code_snippet_only(self, query):
         resp = self.ask_gpt(query=query)
@@ -182,7 +176,7 @@ def check_if_file_exists(file_path: str):
 
 
 def extract_code_snipped(gpt_answer: str) -> str:
-    re_pattern = r"```.*\n*(.*)\n*```"
+    re_pattern = r"```n*(.*)\n*```"
     finds = re.search(re_pattern, gpt_answer)
     if not finds:
         # despite the initial prompt, sometimes the answer is given as a single line, containing only code
