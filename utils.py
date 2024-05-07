@@ -4,13 +4,11 @@ import os
 import platform
 import re
 import subprocess
-from typing import List, Literal, Dict, Optional
+from typing import Dict, List, Literal, Optional
 
 import colorama
-from openai import OpenAI
-
-client = OpenAI()
 from colorama import Fore
+from openai import OpenAI
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 
@@ -42,8 +40,13 @@ help_refusal_text = "I don't know how to help with that"
 
 
 class ChatWithMemory:
-    def __init__(self, system_prompt: str, temperature: float, functions: List = None,
-                 model: str = "gpt-3.5-turbo"):
+    def __init__(
+        self,
+        system_prompt: str,
+        temperature: float,
+        functions: List = None,
+        model: str = "gpt-3.5-turbo",
+    ):
         self.model = model
         self.temperature = temperature
         # TODO extract functions list just from the name using signature and docstring
@@ -53,6 +56,8 @@ class ChatWithMemory:
 
         self.generated_one_liners = []
         self.executed_one_liners = []
+
+        self.client = OpenAI()
         colorama.init(autoreset=True)
 
     def initial_call(self):
@@ -63,12 +68,14 @@ class ChatWithMemory:
         self.messages = [ChatMessage("system", self.system_prompt).__dict__]
 
         # Give the GPT some context about the system operated:
-        self.messages.append(ChatMessage("system", f"System info: {self.get_system_info()}").__dict__)
+        self.messages.append(
+            ChatMessage("system", f"System info: {self.get_system_info()}").__dict__
+        )
 
         with yaspin(Spinners.flip, text="Initiating GPT...") as sp:
-            response = client.chat.completions.create(model=self.model,
-                                                      messages=self.messages,
-                                                      temperature=self.temperature)
+            response = self.client.chat.completions.create(
+                model=self.model, messages=self.messages, temperature=self.temperature
+            )
             # todo check response
 
     def _handle_chat_completion_call(self, prompt, role: str = "user"):
@@ -76,9 +83,9 @@ class ChatWithMemory:
             os_name = platform.system() if platform.system() != "Darwin" else "Mac OS"
             prompt = f"Generate a terminal one-liner to {prompt} in {os_name}"
             self.messages.append(ChatMessage(role, prompt).__dict__)
-            response = client.chat.completions.create(model=self.model,
-                                                      messages=self.messages,
-                                                      temperature=self.temperature)
+            response = self.client.chat.completions.create(
+                model=self.model, messages=self.messages, temperature=self.temperature
+            )
         return response
 
     @staticmethod
@@ -90,7 +97,7 @@ class ChatWithMemory:
             "Architecture": platform.architecture()[0],
             "Machine": platform.machine(),
             "Node (Hostname)": platform.node(),
-            "Processor Name": platform.processor() or "N/A"
+            "Processor Name": platform.processor() or "N/A",
         }
         return system_info
 
@@ -120,10 +127,14 @@ class ChatWithMemory:
             function_name = response_message["function_call"]["name"]
             function_to_call = available_functions[function_name]
             function_args = json.loads(response_message["function_call"]["arguments"])
-            function_response = function_to_call(file_path=function_args.get("file_path"))
+            function_response = function_to_call(
+                file_path=function_args.get("file_path")
+            )
 
             # Step 4: send the info on the function call and function response to GPT
-            self.messages.append(response_message)  # extend conversation with assistant's reply
+            self.messages.append(
+                response_message
+            )  # extend conversation with assistant's reply
             self.messages.append(
                 {
                     "role": "function",
@@ -131,9 +142,9 @@ class ChatWithMemory:
                     "content": function_response,
                 }
             )  # extend conversation with function response
-            second_response = client.chat.completions.create(model=self.model,
-                                                             messages=self.messages,
-                                                             temperature=self.temperature)  # get a new response from GPT where it can see the function response
+            second_response = self.client.chat.completions.create(
+                model=self.model, messages=self.messages, temperature=self.temperature
+            )  # get a new response from GPT where it can see the function response
             self.messages.append(second_response.choices[0].message)
             return second_response.choices[0].message.content
 

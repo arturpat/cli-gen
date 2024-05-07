@@ -26,3 +26,7 @@ The script will guide you to set up your OpenAI api key
 ## Known issues
 - Sometimes GPT will refuse to answer (`I don't know how to help with that.`). 
 You can select `(R)etry`, keep your fingers crossed and wait for another try.
+
+## Contributing
+- Utilise the pre-configured pre-commit. Run `pre-commit run --all-files` before pushing your changes.
+- The checks will also be executed against any opened PR
