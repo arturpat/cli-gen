@@ -200,3 +200,50 @@ def extract_code_snipped(gpt_answer: str) -> str:
         print(gpt_answer)
         raise ValueError("No code found")
     return finds.group(1)
+
+
+def get_api_key() -> str:
+    # check from env vars
+    key = os.environ.get("OPENAI_API_KEY")
+    if key:
+        return key
+
+    # check in the file
+    current_directory = os.path.dirname(
+        os.path.abspath(__file__)
+    )  # cli-gen.py location
+    try:
+        with open(
+            os.path.join(current_directory, "open_ai_api_key.txt")
+        ) as api_key_file:
+            key = api_key_file.readlines()[0].strip("\n")
+            os.environ["OPENAI_API_KEY"] = key
+            return key
+    except FileNotFoundError:
+        pass  # no file with expected name
+    except IndexError:
+        pass  # empty file
+
+    # not found in file, not found in env vars
+    print("API key not found in env vars (searched for OPENAI_API_KEY) or in a file.")
+    print(
+        "Go to Go to https://platform.openai.com/api-keys to generate one for yourself"
+    )
+    print("OpenAI offers a free $5 worth credits for everyone once.")
+    print(
+        "Either paste the key here to store it next to cli-gen.py or save it as OPENAI_API_KEY yourself."
+    )
+    key = input("Key: ")
+    # set up the key for now
+    os.environ["OPENAI_API_KEY"] = key
+
+    # dump the key
+
+    with open(os.path.join(current_directory, "open_ai_api_key.txt"), "w") as text_file:
+        print(key, file=text_file)
+    print(
+        f"Thanks, api key saved at {os.path.join(current_directory, 'open_ai_api_key.txt')}\n"
+    )
+
+    return key
+    # if not present, either ask to fill in or link to openai api tokens
